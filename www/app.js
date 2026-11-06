@@ -21,7 +21,7 @@ const LAYER_DEF = {
 
 let DATA = null;
 let WARN = null; // DWD-Warnungen für Berlin, null = nicht geladen
-const state = { tab: "karte", geo: null, geoState: "idle", layers: { auslauf: true, wasser: false, tierarzt: false, baden: false } };
+const state = { tab: "karte", openOnly: false, geo: null, geoState: "idle", layers: { auslauf: true, wasser: false, tierarzt: false, baden: false } };
 let map = null, groups = {}, meMarker = null;
 
 /* ------------------------------ Helfer ----------------------------- */
@@ -257,6 +257,8 @@ function renderChips() {
     $("chips").innerHTML = Object.entries(LAYER_DEF)
       .map(([k, d]) => `<button type="button" class="chip layer${state.layers[k] ? " on" : ""}" data-layer="${k}" style="--lc:${d.c}">${esc(d.label)}</button>`)
       .join("") + geoChip;
+  } else if (state.tab === "tierarzt") {
+    $("chips").innerHTML = `<button type="button" class="chip open${state.openOnly ? " on" : ""}" data-open="1">Jetzt geöffnet</button>` + geoChip;
   } else {
     $("chips").innerHTML = geoChip;
   }
@@ -347,18 +349,29 @@ function renderTierarzt() {
   const order = (v) => (v.h24 ? 0 : v.open === true ? 1 : v.open === null ? 2 : 3);
   let list = byDist(vets);
   list = [...list].sort((a, b) => order(a) - order(b));
+  if (state.openOnly) list = list.filter((v) => v.h24 || v.open === true);
   if (state.geo) list = list.slice(0, 40);
 
   $("pane-tierarzt").innerHTML = `
     <p class="notice alarm"><strong>Im Notfall vorher anrufen.</strong> Die Öffnungszeiten stammen aus OpenStreetMap und können
       veraltet sein. Nachts und am Wochenende hat in Berlin ein tierärztlicher Notdienst geöffnet, die Praxis wechselt.</p>
+    ${state.openOnly ? `<p class="sec-note"><strong>${list.length} Praxen</strong> haben laut OpenStreetMap jetzt geöffnet. Praxen ohne hinterlegte Öffnungszeiten sind ausgeblendet, obwohl einige davon geöffnet sein können.</p>` : ""}
     <p class="sec-note">${state.geo ? "Rund um die Uhr geöffnete und jetzt geöffnete Praxen zuerst, danach nach Entfernung." : "Mit „In meiner Nähe“ nach Entfernung sortieren."}</p>
     ${list.map((v) => `<div class="row vet">
         <span class="row-main"><b>${esc(v.name)}</b>${v.addr ? `<s>${esc(v.addr)}</s>` : ""}
           <span class="row-tags">${v.h24 ? `<span class="tag alarm">24 Stunden</span>` : v.open === true ? `<span class="tag ok">jetzt geöffnet</span>` : v.open === false ? `<span class="tag">jetzt geschlossen</span>` : `<span class="tag">Öffnungszeiten unbekannt</span>`}${distTag(v.c)}</span></span>
-        <span class="row-acts">${v.phone ? `<a class="call" href="tel:${esc(v.phone.split(";")[0].replace(/[^\d+]/g, ""))}">Anrufen</a>` : ""}${mapBtn("tierarzt", v.i)}</span>
-      </div>`).join("") || `<p class="empty">Noch keine Kartendaten geladen.</p>`}
+        <span class="row-acts">${v.phone ? `<a class="call" href="tel:${esc(v.phone.split(";")[0].replace(/[^\d+]/g, ""))}">Anrufen</a>` : ""}${webLink(v.web)}${mapBtn("tierarzt", v.i)}</span>
+      </div>`).join("") || `<p class="empty">${state.openOnly ? "Laut OpenStreetMap hat gerade keine Praxis geöffnet. Im Notfall den tierärztlichen Notdienst anrufen." : "Noch keine Kartendaten geladen."}</p>`}
   `;
+}
+
+/** Website-Link aus OSM; nur http(s), ohne Protokoll wird https ergänzt */
+function webLink(raw) {
+  let u = String(raw || "").split(";")[0].trim();
+  if (!u) return "";
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  try { new URL(u); } catch { return ""; }
+  return `<a class="web" href="${esc(u)}" target="_blank" rel="noreferrer">Website</a>`;
 }
 
 /* ------------------------------ Karte ------------------------------ */
@@ -489,6 +502,7 @@ document.addEventListener("click", (e) => {
   if (t.dataset.tab) { state.tab = t.dataset.tab; renderChips(); renderPane(); return; }
   if (t.dataset.layer) { state.layers[t.dataset.layer] = !state.layers[t.dataset.layer]; renderChips(); renderMap(); return; }
   if (t.dataset.geo) { locate(); return; }
+  if (t.dataset.open) { state.openOnly = !state.openOnly; renderChips(); renderPane(); return; }
   if (t.dataset.show) { showOnMap(t.dataset.show); return; }
   if (t.dataset.goto) { state.tab = t.dataset.goto; renderChips(); renderPane(); $("tabs").scrollIntoView({ behavior: "smooth" }); return; }
 });

@@ -1,0 +1,12 @@
+{
+  "name": "wuff",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "wuff! Berlin für Hunde: Sprengtermine, Auslaufgebiete, Blaualgen, Trinkbrunnen und Tierärzte als PWA",
+  "scripts": {
+    "update": "node scripts/build-data.mjs",
+    "serve": "cd www && python3 -m http.server 8080"
+  },
+  "engines": { "node": ">=18" }
+}

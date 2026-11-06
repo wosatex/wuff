@@ -1,0 +1,49 @@
+name: wuff-Daten aktualisieren
+
+on:
+  schedule:
+    - cron: "10 4 * * *"   # früh am Morgen (5:10 Uhr Winterzeit, 6:10 Uhr Sommerzeit)
+    - cron: "10 14 * * *"  # nachmittags, falls die Polizei neue Termine eingestellt hat
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: wuff
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Daten holen
+        run: node scripts/build-data.mjs --out www/data/wuff.json
+
+      - name: Änderung committen
+        run: |
+          git config user.name "wuff-bot"
+          git config user.email "actions@github.com"
+          git add www/data/wuff.json
+          if git diff --staged --quiet; then
+            echo "Keine Änderungen."
+          else
+            git commit -m "Daten $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: www
+      - uses: actions/deploy-pages@v4

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>wuff! Berlin für Hunde</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Sprengtermine im Grunewald, Hundeauslaufgebiete, Trinkbrunnen, Blaualgen und Tierärzte in Berlin auf einen Blick.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0C3D48">
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="app.css">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="wuff!">
+</head>
+<body>
+
+<header class="head">
+  <div class="head-row">
+    <h1 class="wordmark">wuff!<br><span>Berlin für Hunde</span></h1>
+    <button class="refresh" id="refresh" type="button">Aktualisieren</button>
+  </div>
+  <p class="stand" id="stand">Daten werden geladen …</p>
+  <div id="banners"></div>
+</header>
+
+<!-- Das Wichtigste des Tages: Sprengung, Wetterwarnung, Blaualgen -->
+<section class="today" id="today" aria-live="polite"></section>
+
+<div class="controls">
+  <div class="viewtoggle" id="tabs" role="tablist" aria-label="Bereich">
+    <button type="button" class="vt on" data-tab="karte" role="tab">Karte</button>
+    <button type="button" class="vt" data-tab="auslauf" role="tab">Auslauf</button>
+    <button type="button" class="vt" data-tab="wasser" role="tab">Wasser</button>
+    <button type="button" class="vt" data-tab="tierarzt" role="tab">Tierarzt</button>
+  </div>
+  <div class="chips" id="chips"></div>
+</div>
+
+<div class="mapwrap" id="pane-karte">
+  <div id="map"></div>
+  <p class="mapnote">Kartenkacheln von <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> · brauchen Internet. Alles andere funktioniert offline.</p>
+</div>
+<main class="list" id="pane-auslauf" hidden></main>
+<main class="list" id="pane-wasser" hidden></main>
+<main class="list" id="pane-tierarzt" hidden></main>
+
+<section class="method" id="methode">
+  <h2>Woher die Daten kommen</h2>
+  <p><strong>Sprengtermine:</strong> von der Seite der Polizei Berlin (LKA Kriminaltechnik). Ein Skript liest sie jeden Morgen
+     aus. Ist ein Termin dort als abgesagt markiert, zeigt die App das an. Kurzfristige Änderungen können fehlen, im Zweifel
+     gilt die Polizeiseite.</p>
+  <p><strong>Blaualgen:</strong> aus den Messwerten des Lageso, gemessen als Chlorophyll a. Ab 10 µg/l warnt die App, ab
+     40 µg/l deutlich. Cyanobakterien können für Hunde schon bei Kontakt mit dem Fell oder wenig Schlucken giftig sein.
+     Gemessen wird nur in der Badesaison von Mai bis September.</p>
+  <p><strong>Auslaufgebiete, Trinkbrunnen, Tierärzte:</strong> aus OpenStreetMap, gepflegt von Freiwilligen. Die
+     Waldauslaufgebiete und ihre Karten stammen von den Berliner Forsten. Was auf einer Fläche gilt, zeigt im Zweifel
+     die Beschilderung vor Ort.</p>
+  <p><strong>Wetterwarnungen:</strong> live vom Deutschen Wetterdienst, nur wenn das Handy online ist.</p>
+  <p class="method-note">Öffnungszeiten von Tierärzten stammen aus OpenStreetMap und können veraltet sein. Im Notfall immer
+     vorher anrufen. Diese App ist ein privates Projekt und keine Behördenauskunft.</p>
+  <p class="method-note" id="quellen"></p>
+</section>
+
+<div class="ios-tip" id="iosTip" hidden>
+  <p><strong>Auf den Homescreen legen:</strong> in Safari unten auf <span class="share">Teilen</span> tippen,
+     dann „Zum Home-Bildschirm“. Danach startet wuff! im Vollbild und funktioniert offline.</p>
+  <button type="button" id="iosTipClose" aria-label="Hinweis schließen">Verstanden</button>
+</div>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

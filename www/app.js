@@ -124,10 +124,16 @@ function loadWarnings() {
     loadWarnings(d) {
       const all = Object.entries(d?.warnings || {}).filter(([cell]) => cell.startsWith("111")).flatMap(([, w]) => w);
       const seen = new Set();
+      const now = Date.now(), soon = now + 12 * 3600000;
       WARN = all
-        .filter((w) => /HITZE|GLÄTTE|GLATTEIS|FROST|UNWETTER|ORKAN|GEWITTER/i.test(w.event || ""))
+        // Nur, was für Hunde zählt. Bloßer Frost ist ausgenommen: Den warnt der DWD schon bei leichtem
+        // Nachtfrost, für Pfoten relevant wird es erst bei Glätte, weil dann gestreut wird.
+        // Sturm und Gewitter erst ab Unwetterstufe (3).
+        .filter((w) => /HITZE|GLÄTTE|GLATTEIS/i.test(w.event || "") || (/UNWETTER|ORKAN|GEWITTER|STURM/i.test(w.event || "") && (w.level || 0) >= 3))
+        // Gilt schon oder beginnt in den nächsten 12 Stunden, und ist noch nicht vorbei
+        .filter((w) => (!w.start || w.start <= soon) && (!w.end || w.end > now))
         .filter((w) => !seen.has(w.event) && seen.add(w.event))
-        .map((w) => ({ event: w.event, headline: w.headline, desc: w.description, end: w.end, level: w.level }));
+        .map((w) => ({ event: w.event, headline: w.headline, desc: w.description, start: w.start, end: w.end, level: w.level }));
       renderToday();
     },
   };
@@ -196,7 +202,7 @@ function renderToday() {
     : "";
 
   const warn = (WARN || []).map((w) => `<article class="alert ${/HITZE/i.test(w.event) ? "amber" : "blue"}">
-      <p class="alert-kicker">Deutscher Wetterdienst${w.end ? ` · bis ${esc(new Date(w.end).toLocaleString("de-DE", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }))} Uhr` : ""}</p>
+      <p class="alert-kicker">Deutscher Wetterdienst · ${esc(warnWhen(w))}</p>
       <h2>${esc(warnTitle(w))}</h2>
       <p>${esc(warnTip(w))}</p>
     </article>`).join("");
@@ -215,16 +221,22 @@ function renderToday() {
     (src ? `<p class="today-src">Sprengtermine: <a href="${esc(src)}" target="_blank" rel="noreferrer">Polizei Berlin</a></p>` : "");
 }
 
+const fmtWarnTime = (ms) => new Date(ms).toLocaleString("de-DE", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) + " Uhr";
+function warnWhen(w) {
+  const active = !w.start || w.start <= Date.now();
+  if (active) return w.end ? `gilt bis ${fmtWarnTime(w.end)}` : "gilt jetzt";
+  return `ab ${fmtWarnTime(w.start)}${w.end ? ` bis ${fmtWarnTime(w.end)}` : ""}`;
+}
 function warnTitle(w) {
   const e = (w.event || "").toLowerCase();
   if (e.includes("hitze")) return "Hitzewarnung für Berlin";
-  if (/glätte|glatteis|frost/.test(e)) return "Glätte und Frost in Berlin";
+  if (/glätte|glatteis/.test(e)) return "Glättewarnung für Berlin";
   return w.headline || w.event;
 }
 function warnTip(w) {
   const e = (w.event || "").toLowerCase();
   if (e.includes("hitze")) return "Asphalt kann für Pfoten zu heiß werden. Lange Runden früh am Morgen oder spät am Abend, Wasser mitnehmen, Schatten suchen.";
-  if (/glätte|glatteis|frost/.test(e)) return "Auf Gehwegen liegt wahrscheinlich Streusalz. Pfoten nach dem Spaziergang mit Wasser abspülen, bei empfindlichen Pfoten Pfotenschutz.";
+  if (/glätte|glatteis/.test(e)) return "Bei Glätte wird auf Gehwegen gestreut. Pfoten nach dem Spaziergang mit Wasser abspülen, bei empfindlichen Pfoten Pfotenschutz.";
   return w.desc || "";
 }
 

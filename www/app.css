@@ -292,3 +292,5 @@ a{color:var(--deep)}
 .tag.alarm{font-weight:600}
 .notice{margin-top:0}
 .pop-btn{text-decoration:none;color:#fff !important}
+.me-paw{background:none;border:none}
+.me-paw svg{display:block;filter:drop-shadow(0 1px 3px rgba(12,37,48,.5))}

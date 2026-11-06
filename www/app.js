@@ -411,6 +411,7 @@ function renderMap() {
   for (const [k, g] of Object.entries(groups)) {
     if (state.layers[k]) g.addTo(map); else g.remove();
   }
+  if (state.geo && !meMarker) placeMe();
   setTimeout(() => map.invalidateSize(), 50);
 }
 
@@ -431,6 +432,25 @@ function showOnMap(key) {
 
 /* ---------------------------- Standort ----------------------------- */
 
+const PAW_SVG = `<svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+  <g fill="#D7262B" stroke="#fff" stroke-width="2.2">
+    <ellipse cx="20" cy="27" rx="9" ry="7.5"/>
+    <ellipse cx="8.5" cy="17" rx="4" ry="5" transform="rotate(-20 8.5 17)"/>
+    <ellipse cx="15.5" cy="10" rx="4" ry="5.2" transform="rotate(-6 15.5 10)"/>
+    <ellipse cx="24.5" cy="10" rx="4" ry="5.2" transform="rotate(6 24.5 10)"/>
+    <ellipse cx="31.5" cy="17" rx="4" ry="5" transform="rotate(20 31.5 17)"/>
+  </g></svg>`;
+
+/** Eigener Standort als rote Pfote; wird auch nachgetragen, wenn die Karte erst später geöffnet wird */
+function placeMe() {
+  if (!map || !state.geo) return;
+  if (meMarker) meMarker.remove();
+  meMarker = L.marker(state.geo, {
+    icon: L.divIcon({ className: "me-paw", html: PAW_SVG, iconSize: [34, 34], iconAnchor: [17, 17] }),
+    zIndexOffset: 1000, keyboard: false, title: "Mein Standort",
+  }).addTo(map);
+}
+
 function locate() {
   if (state.geo) { state.geo = null; state.geoState = "idle"; if (meMarker) meMarker.remove(); renderChips(); renderPane(); return; }
   if (!navigator.geolocation) { state.geoState = "err"; renderChips(); return; }
@@ -440,8 +460,7 @@ function locate() {
       state.geo = [p.coords.latitude, p.coords.longitude];
       state.geoState = "ok";
       if (map) {
-        if (meMarker) meMarker.remove();
-        meMarker = L.circleMarker(state.geo, { radius: 7, color: "#fff", weight: 2, fillColor: "#0C2530", fillOpacity: 1 }).addTo(map);
+        placeMe();
         if (state.tab === "karte") map.setView(state.geo, 14);
       }
       renderChips(); renderPane();

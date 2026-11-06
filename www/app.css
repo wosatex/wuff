@@ -298,3 +298,4 @@ a{color:var(--deep)}
 .chip.open::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#137360;margin-right:6px;vertical-align:1px}
 .chip.open.on{background:#137360;border-color:#137360;color:#fff}
 .chip.open.on::before{background:#fff}
+.pop-gmaps{display:block;margin-top:8px;font-size:12px;font-weight:600}

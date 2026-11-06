@@ -360,10 +360,17 @@ function renderTierarzt() {
     ${list.map((v) => `<div class="row vet">
         <span class="row-main"><b>${esc(v.name)}</b>${v.addr ? `<s>${esc(v.addr)}</s>` : ""}
           <span class="row-tags">${v.h24 ? `<span class="tag alarm">24 Stunden</span>` : v.open === true ? `<span class="tag ok">jetzt geöffnet</span>` : v.open === false ? `<span class="tag">jetzt geschlossen</span>` : `<span class="tag">Öffnungszeiten unbekannt</span>`}${distTag(v.c)}</span></span>
-        <span class="row-acts">${v.phone ? `<a class="call" href="tel:${esc(v.phone.split(";")[0].replace(/[^\d+]/g, ""))}">Anrufen</a>` : ""}${webLink(v.web)}${mapBtn("tierarzt", v.i)}</span>
+        <span class="row-acts">${v.phone ? `<a class="call" href="tel:${esc(v.phone.split(";")[0].replace(/[^\d+]/g, ""))}">Anrufen</a>` : ""}${webLink(v.web)}${gmapsLink(v)}${mapBtn("tierarzt", v.i)}</span>
       </div>`).join("") || `<p class="empty">${state.openOnly ? "Laut OpenStreetMap hat gerade keine Praxis geöffnet. Im Notfall den tierärztlichen Notdienst anrufen." : "Noch keine Kartendaten geladen."}</p>`}
   `;
 }
+
+/** Öffnet die Praxis in Google Maps (App oder Web). Reiner Link, keine API, keine Kosten. */
+function gmapsUrl(v) {
+  const q = v.addr ? `${v.name}, ${v.addr} Berlin` : `${v.name} ${v.c[0]},${v.c[1]}`;
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+}
+const gmapsLink = (v) => `<a class="web" href="${esc(gmapsUrl(v))}" target="_blank" rel="noreferrer">In Google Maps</a>`;
 
 /** Website-Link aus OSM; nur http(s), ohne Protokoll wird https ergänzt */
 function webLink(raw) {
@@ -402,7 +409,7 @@ function buildLayers() {
   (o.vets || []).forEach((v, i) => {
     const open = openNow(v.oh);
     const m = L.circleMarker(v.c, dot(LAYER_DEF.tierarzt.c, v.h24 ? 8 : 6)).bindPopup(
-      `<span class="pop-name">${esc(v.name)}</span><span class="pop-sub">${v.h24 ? "24 Stunden geöffnet" : open === true ? "laut OSM jetzt geöffnet" : open === false ? "laut OSM jetzt geschlossen" : "Öffnungszeiten unbekannt"}</span>${v.phone ? `<a class="pop-btn" href="tel:${esc(v.phone.split(";")[0].replace(/[^\d+]/g, ""))}">Anrufen</a>` : ""}`);
+      `<span class="pop-name">${esc(v.name)}</span><span class="pop-sub">${v.h24 ? "24 Stunden geöffnet" : open === true ? "laut OSM jetzt geöffnet" : open === false ? "laut OSM jetzt geschlossen" : "Öffnungszeiten unbekannt"}</span>${v.phone ? `<a class="pop-btn" href="tel:${esc(v.phone.split(";")[0].replace(/[^\d+]/g, ""))}">Anrufen</a>` : ""}<a class="pop-gmaps" href="${esc(gmapsUrl(v))}" target="_blank" rel="noreferrer">In Google Maps ansehen</a>`);
     m._key = "tierarzt:" + i; groups.tierarzt.addLayer(m);
   });
   (DATA.badestellen || []).forEach((b, i) => {
